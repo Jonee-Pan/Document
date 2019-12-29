@@ -1,6 +1,6 @@
 # <center>UIS8910DM平台的编译系统</center>
 
-----------
+
 &emsp;&emsp;这里所说的编译系统是一种笼统的说法，大体上包含构建系统和编译工具集合。编译工具集合就是大家熟悉的编译器、汇编器、连接器等，该平台使用的是GCC，具体路径位于prebuilt/win32/gcc-arm-none-eabi，这里就不多说了。下面我们主要讲讲该平台的构建系统（build system）。
 
 &emsp;&emsp;讲到构建系统，大家比较熟悉就是makefile了，它通过Makefile语言编写的脚本，组织代码、资源，调用编译工具集合及其它工具，共同完成最终目标的实现。这个最终目标可以是库文件、可执行的应用软件、不同格式的可烧写的嵌入式固件等等。实际上，每个IDE里都有一套自己的构建工具，比如VS的nmake，注重效率的Ninja，Mac系统的xcode等等。有些软件工程直接通过一个单一的构建工具完成系统构建，优点是简单，缺点是缺乏灵活、跨平台移值工作量大。Linux内核是通过Kconfig和makefile组成构建系统的，kconfig用于配置、make主导生成最终的内核镜像。对于那些希望实现跨平台的软件工程而言，直接使用makefile明显带来移值工作的大量增加，为了解决这个问题，出现如cmake、autotool这样的工具，这些工具的语言语法相对简单，通过它们自动生成makefile、nmake、Ninja、xcode所对应的脚本，完成最终目标的构建。也就说，cmake、autotool这样的工具是位于make、nmake、Ninja、xcode等工具的上层。
