@@ -34,8 +34,9 @@
 &emsp;&emsp;cmake是一种更高层次的构建工具，也是更为通用的构建工具，基于它可以构建跨平台的编译环境。
 &emsp;&emsp;本平台通过`cmake/extension.cmake`这个文件扩展很多cmake的功能函数。比如relative_glob、beautify_c_code等等。基于cmake的这些功能，将每个软件功能模块各自生成为一个静态库，最后链接这些静态库生成最终的目标固件。基本上components下的每个子目录都会生成一个或者多个静态库，生成的静态库位于`out/<project_target>/lib`目录下。
 &emsp;&emsp;最终固件的生成脚本位于SDK主目录的`CMakeLists.txt`中，从这段脚本上看，我们可以为一个项目配置多个不同的NV，以适配不同的RF硬件，该编译系统能把适用于不同RF硬件的固件都生成出来。
+	
     # Create pac for all variants
-    foreach(nvmvariant ${CONFIG_NVM_VARIANTS}) build_modem_image(${nvmvariant})
+	foreach(nvmvariant ${CONFIG_NVM_VARIANTS}) build_modem_image(${nvmvariant})
         set(nvname ${NVM_VARIANT_${nvmvariant}_NVMITEM})
         set(pac_config ${out_hex_dir}/${nvmvariant}.json)
         set(pac_file ${out_hex_dir}/${BUILD_TARGET}-${nvmvariant}-${nvname}_${BUILD_RELEASE_TYPE}.pac) pac_init_fdl(init_fdl ${pac_config})
@@ -74,7 +75,7 @@
 **这种做法有个不好地方就是：C/C++代码中引用这些宏的地方需要手动 include 相应的.h文件（通过.h.in生成的，位于`out/<project_target>/include`目录）。**
 
 
-##Ninja  
+## Ninja  
 &emsp;&emsp;Ninja是一种类似于 make 的构建工具，它的主要特点是通过编译任务并行组织，大大提高了构建速度。关于 Ninja 的详细知识请查看相关网页，这里就不做描述。因为在本平台中，所有需要手动编写的编译脚本都是 cmake 脚本，通过 cmake 的 -G 命令将相关的cmake脚本转化为 Ninja 脚本，然后通过 Ninja 构建最终的目标固件。
 
 
