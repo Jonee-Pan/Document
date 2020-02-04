@@ -70,11 +70,11 @@
 
 &emsp;&emsp;为了在C/C++代码中引入开关配置，本平台采用了cmake的`configure_file`机制。通过这个机制，可以将KConfig中定义的配置信息（通过`target.cmake`）引入到C/C++代码中。
 比如hal_config.h.in中的 `#cmakedefine CONFIG_APPIMG_LOAD_FLASH`，如果KConfig中`CONFIG_APPIMG_LOAD_FLASH`开启，则C/C++代码中`CONFIG_APPIMG_LOAD_FLASH`宏就会被定义。
-又比如atr_config.h.in中的`#cmakedefine CONFIG_ATR_URC_BUFF_SIZE @CONFIG_ATR_URC_BUFF_SIZE@`，在C/C++代码中的CONFIG_ATR_URC_BUFF_SIZE宏就引用了KConfig中定义的值。
+又比如atr_config.h.in中的`#cmakedefine CONFIG_ATR_URC_BUFF_SIZE @CONFIG_ATR_URC_BUFF_SIZE@`，在C/C++代码中的CONFIG_ATR_URC_BUFF_SIZE宏就引用了KConfig中定义的值。<\b>
 **这种做法有个不好地方就是：C/C++代码中引用这些宏的地方需要手动 include 相应的.h文件（通过.h.in生成的，位于`out/<project_target>/include`目录）。**
 
 
-##Ninja
+##Ninja  
 &emsp;&emsp;Ninja是一种类似于 make 的构建工具，它的主要特点是通过编译任务并行组织，大大提高了构建速度。关于 Ninja 的详细知识请查看相关网页，这里就不做描述。因为在本平台中，所有需要手动编写的编译脚本都是 cmake 脚本，通过 cmake 的 -G 命令将相关的cmake脚本转化为 Ninja 脚本，然后通过 Ninja 构建最终的目标固件。
 
 
