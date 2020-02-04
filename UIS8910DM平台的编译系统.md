@@ -18,7 +18,7 @@
 &emsp;&emsp;当然，KConfig不单单可以导出makefile脚本，还可以导出cmake脚本，本平台就是通过`kconfiglib.py`这个脚本内的功能导出相应的cmake脚本：`target.cmake`。
 
 &emsp;&emsp;本平台通过运行menuconfig.bat来对项目进行可视化的配置（命令是 `menuconfig.bat <target_name>`），配置完成后会生成或者更新`target/<target_name>/`目录下`target.config`文件，通过`minconfig.py`脚本可以将`target.config`中与默认配置相同的选项清除掉，仅保留与默认配置不一致的项。
-在SDK根目录下的`CMakeLists.txt`中，通过以下脚本将KConfig完成的配置转化为cmake可以识别的配置：`target.cmake`，这一步在`cmake ../.. -G Ninja` 这一操作中完成的。
+&emsp;&emsp;在SDK根目录下的`CMakeLists.txt`中，通过以下脚本将KConfig完成的配置转化为cmake可以识别的配置：`target.cmake`，这一步在`cmake ../.. -G Ninja` 这一操作中完成的。
 	
  	# Process and include target config
 	
@@ -31,4 +31,53 @@
 	include(${TARGET_CMAKE})
 
 ## cmake
-&emsp;&emsp;cmake是一种更高层次的构建工具，
+&emsp;&emsp;cmake是一种更高层次的构建工具，也是更为通用的构建工具，基于它可以构建跨平台的编译环境。
+&emsp;&emsp;本平台通过`cmake/extension.cmake`这个文件扩展很多cmake的功能函数。比如relative_glob、beautify_c_code等等。基于cmake的这些功能，将每个软件功能模块各自生成为一个静态库，最后链接这些静态库生成最终的目标固件。基本上components下的每个子目录都会生成一个或者多个静态库，生成的静态库位于`out/<project_target>/lib`目录下。
+&emsp;&emsp;最终固件的生成脚本位于SDK主目录的`CMakeLists.txt`中，从这段脚本上看，我们可以为一个项目配置多个不同的NV，以适配不同的RF硬件，该编译系统能把适用于不同RF硬件的固件都生成出来。
+    # Create pac for all variants
+    foreach(nvmvariant ${CONFIG_NVM_VARIANTS}) build_modem_image(${nvmvariant})
+        set(nvname ${NVM_VARIANT_${nvmvariant}_NVMITEM})
+        set(pac_config ${out_hex_dir}/${nvmvariant}.json)
+        set(pac_file ${out_hex_dir}/${BUILD_TARGET}-${nvmvariant}-${nvname}_${BUILD_RELEASE_TYPE}.pac) pac_init_fdl(init_fdl ${pac_config})
+        pac_nvitem_8910(nvitem_8910 ${pac_config})
+        if(DEFINED package_file_depends) 
+			set(pac_package_file cfg-pack-cpio -i PACKAGE_FILE -p ${out_hex_dir}/${package_file_cpio} ${pac_config}) 
+		endif()
+        execute_process(
+			COMMAND python3 ${pacgen_py} ${init_fdl} ${nvitem_8910} 
+			cfg-image -i BOOTLOADER -a ${CONFIG_BOOT_FLASH_ADDRESS} -s ${CONFIG_BOOT_FLASH_SIZE}
+                    -p ${out_hex_dir}/boot.sign.img ${pac_config} 
+			cfg-image -i AP -a ${CONFIG_APP_FLASH_ADDRESS} -s ${CONFIG_APP_FLASH_SIZE}
+                    -p ${out_hex_dir}/${BUILD_TARGET}.sign.img ${pac_config} 
+			cfg-image -i PS -a ${CONFIG_FS_MODEM_FLASH_ADDRESS} -s ${CONFIG_FS_MODEM_FLASH_SIZE}
+                    -p ${out_hex_dir}/${nvmvariant}.img ${pac_config} 
+			${pac_package_file}
+            cfg-clear-nv ${pac_config}
+            cfg-phase-check ${pac_config}
+            cfg-nv -s ${CONFIG_NVBIN_FIXED_SIZE} -p ${out_hex_dir}/${nvmvariant}_nvitem.bin ${pac_config} 
+			dep-gen --base ${SOURCE_TOP_DIR} ${pac_config} 
+			OUTPUT_VARIABLE pac_dep
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            WORKING_DIRECTORY ${SOURCE_TOP_DIR} 
+		)
+        add_custom_command(OUTPUT ${pac_file} 
+			COMMAND python3 ${pacgen_py} pac-gen ${pac_config} ${pac_file}
+            DEPENDS ${pacgen_py} ${pac_config} ${pac_dep} 
+			WORKING_DIRECTORY ${SOURCE_TOP_DIR} 
+		)
+        add_custom_target(${nvmvariant}_pacgen ALL DEPENDS ${pac_file}) 
+	endforeach() 
+
+&emsp;&emsp;为了在C/C++代码中引入开关配置，本平台采用了cmake的`configure_file`机制。通过这个机制，可以将KConfig中定义的配置信息（通过`target.cmake`）引入到C/C++代码中。
+比如hal_config.h.in中的 `#cmakedefine CONFIG_APPIMG_LOAD_FLASH`，如果KConfig中`CONFIG_APPIMG_LOAD_FLASH`开启，则C/C++代码中`CONFIG_APPIMG_LOAD_FLASH`宏就会被定义。
+又比如atr_config.h.in中的`#cmakedefine CONFIG_ATR_URC_BUFF_SIZE @CONFIG_ATR_URC_BUFF_SIZE@`，在C/C++代码中的CONFIG_ATR_URC_BUFF_SIZE宏就引用了KConfig中定义的值。
+**这种做法有个不好地方就是：C/C++代码中引用这些宏的地方需要手动 include 相应的.h文件（通过.h.in生成的，位于`out/<project_target>/include`目录）。**
+
+
+##Ninja
+&emsp;&emsp;Ninja是一种类似于 make 的构建工具，它的主要特点是通过编译任务并行组织，大大提高了构建速度。关于 Ninja 的详细知识请查看相关网页，这里就不做描述。因为在本平台中，所有需要手动编写的编译脚本都是 cmake 脚本，通过 cmake 的 -G 命令将相关的cmake脚本转化为 Ninja 脚本，然后通过 Ninja 构建最终的目标固件。
+
+
+&emsp;&emsp;以上是本人关于UIS8910DM平台编译系统粗浅描述，不足和有误的地方，望不吝指教。
+
+
