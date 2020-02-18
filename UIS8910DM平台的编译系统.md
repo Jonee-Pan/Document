@@ -8,7 +8,7 @@
 
 ## KConfig
 
-&emsp;&emsp;KConfig最大的作用就是实现软件项目的配置。在linux内核中，KConfig在编译前会生成2个文件：一个是autoconf.h，用于C代码的宏定义；一个是？？？，是makefile配置项。通过这两个文件，实现对软件项目的配置。有人会说。通过简单自己手写Makefile和.h文件，也可以实现这些功能，这是没错的，但这样会带来有几个问题：  
+&emsp;&emsp;KConfig最大的作用就是实现软件项目的配置。在linux内核中，KConfig在编译前会生成2个文件：一个是build\include\generated\autoconf.h，用于C代码的宏定义；一个是build\.config，是makefile配置项。通过这两个文件，实现对软件项目的配置。有人会说。通过简单自己手写Makefile和.h文件，也可以实现这些功能，这是没错的，但这样会带来有几个问题：  
 
 1. 没有可视化的工具进行清晰可见的配置。
 2. 在配置时需要人为考虑依赖关系，比如需要支持USB storage功能，前提是USB功能，通过KConfig可以清晰得知这种依赖关系，甚至在配置时自动依据这个关系完成相关配置。  
