@@ -54,7 +54,7 @@ sequenceDiagram
 
 运行日志如下图：
 
-![](pic\PASE_log.png)
+![](pic/PASE_log.png)
 
 ### 2.2 Mult-Fabirc 的非首次配网过程中的 PASE 流程
 
